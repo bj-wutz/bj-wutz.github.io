@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="wutz">
+
+
+
+
+
+<title>【Java面试精选】【07期】Redis中是如何实现分布式锁的？ | Wutz&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 6.1.0"><link rel="alternate" href="/atom.xml" title="Wutz's Blog" type="application/atom+xml">
+</head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
+            const isDark = currentTheme === 'dark';
+            const pagebody = document.getElementsByTagName('body')[0]
+            if (isDark) {
+                pagebody.classList.add('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
+            } else {
+                pagebody.classList.remove('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Light"
+            }
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Wutz&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Wutz&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6;    // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function () {
+            tocbot.refresh(obj_merge(tocbot_default_config, { hasInnerContainers: true }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function () {
+        tocbot.init(obj_merge(tocbot_default_config, { collapseDepth: 1 }));
+    });
+
+    function expandToc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, { collapseDepth: expanded ? 1 : DEPTH_MAX }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">【Java面试精选】【07期】Redis中是如何实现分布式锁的？</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">wutz</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">May 7, 2022&nbsp;&nbsp;10:54:32</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89/">Java面试精选</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>分布式锁常见的三种实现方式：</p>
+<ul>
+<li><p>数据库乐观锁；</p>
+</li>
+<li><p>基于Redis的分布式锁；</p>
+</li>
+<li><p>基于ZooKeeper的分布式锁。</p>
+</li>
+</ul>
+<p>本地面试考点是，你对Redis使用熟悉吗？Redis中是如何实现分布式锁的。</p>
+<h2 id="要点"><a href="#要点" class="headerlink" title="要点"></a><strong>要点</strong></h2><p>Redis要实现分布式锁，以下条件应该得到满足</p>
+<ul>
+<li><p>互斥性：在任意时刻，只有一个客户端能持有锁。</p>
+</li>
+<li><p>不能死锁：客户端在持有锁的期间崩溃而没有主动解锁，也能保证后续其他客户端能加锁。</p>
+</li>
+<li><p>容错性：只要大部分的Redis节点正常运行，客户端就可以加锁和解锁。</p>
+</li>
+</ul>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a><strong>实现</strong></h2><p>可以直接通过set key value px milliseconds nx命令实现加锁， 通过Lua脚本实现解锁。</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span>获取锁（unique_value可以是UUID等）</span><br><span class="line">SET resource_name unique_value NX PX  <span class="number">30000</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>释放锁（lua脚本中，一定要比较value，防止误解锁）</span><br><span class="line"><span class="keyword">if</span> redis.call<span class="punctuation">(</span><span class="string">&quot;get&quot;</span><span class="punctuation">,</span>KEYS<span class="punctuation">[</span><span class="number">1</span><span class="punctuation">]</span><span class="punctuation">)</span> <span class="operator">==</span> ARGV<span class="punctuation">[</span><span class="number">1</span><span class="punctuation">]</span> then</span><br><span class="line">    <span class="built_in">return</span> redis.call<span class="punctuation">(</span><span class="string">&quot;del&quot;</span><span class="punctuation">,</span>KEYS<span class="punctuation">[</span><span class="number">1</span><span class="punctuation">]</span><span class="punctuation">)</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">return</span> <span class="number">0</span></span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+
+<h3 id="代码解释"><a href="#代码解释" class="headerlink" title="代码解释"></a><strong>代码解释</strong></h3><ul>
+<li><p>set 命令要用 set key value px milliseconds nx，替代 setnx + expire 需要分两次执行命令的方式，保证了原子性，</p>
+</li>
+<li><p>value 要具有唯一性，可以使用UUID.randomUUID().toString()方法生成，用来标识这把锁是属于哪个请求加的，在解锁的时候就可以有依据；</p>
+</li>
+<li><p>释放锁时要验证 value 值，防止误解锁；</p>
+</li>
+<li><p>通过 Lua 脚本来避免 Check And Set 模型的并发问题，因为在释放锁的时候因为涉及到多个Redis操作 （利用了eval命令执行Lua脚本的原子性）；</p>
+</li>
+</ul>
+<h3 id="加锁代码分析"><a href="#加锁代码分析" class="headerlink" title="加锁代码分析"></a><strong>加锁代码分析</strong></h3><p>首先，set()加入了NX参数，可以保证如果已有key存在，则函数不会调用成功，也就是只有一个客户端能持有锁，满足互斥性。其次，由于我们对锁设置了过期时间，即使锁的持有者后续发生崩溃而没有解锁，锁也会因为到了过期时间而自动解锁（即key被删除），不会发生死锁。最后，因为我们将value赋值为requestId，用来标识这把锁是属于哪个请求加的，那么在客户端在解锁的时候就可以进行校验是否是同一个客户端。</p>
+<h3 id="解锁代码分析"><a href="#解锁代码分析" class="headerlink" title="解锁代码分析"></a><strong>解锁代码分析</strong></h3><p>将Lua代码传到jedis.eval()方法里，并使参数KEYS[1]赋值为lockKey，ARGV[1]赋值为requestId。在执行的时候，首先会获取锁对应的value值，检查是否与requestId相等，如果相等则解锁（删除key）。</p>
+<h3 id="存在的风险"><a href="#存在的风险" class="headerlink" title="存在的风险"></a><strong>存在的风险</strong></h3><p>如果存储锁对应key的那个节点挂了的话，就可能存在丢失锁的风险，导致出现多个客户端持有锁的情况，这样就不能实现资源的独享了。</p>
+<ul>
+<li><p>客户端A从master获取到锁</p>
+</li>
+<li><p>在master将锁同步到slave之前，master宕掉了（Redis的主从同步通常是异步的）。主从切换，slave节点被晋级为master节点</p>
+</li>
+<li><p>客户端B取得了同一个资源被客户端A已经获取到的另外一个锁。导致存在同一时刻存不止一个线程获取到锁的情况。</p>
+</li>
+</ul>
+<h2 id="redlock算法出现"><a href="#redlock算法出现" class="headerlink" title="redlock算法出现"></a><strong>redlock算法出现</strong></h2><p>这个场景是假设有一个 redis cluster，有 5 个 redis master 实例。然后执行如下步骤获取一把锁：</p>
+<p>1、获取当前时间戳，单位是毫秒；</p>
+<p>2、跟上面类似，轮流尝试在每个 master 节点上创建锁，过期时间较短，一般就几十毫秒；</p>
+<p>3、尝试在大多数节点上建立一个锁，比如 5 个节点就要求是 3 个节点 n &#x2F; 2 + 1；</p>
+<p>4、客户端计算建立好锁的时间，如果建立锁的时间小于超时时间，就算建立成功了；</p>
+<p>5、要是锁建立失败了，那么就依次之前建立过的锁删除；</p>
+<p>6、只要别人建立了一把分布式锁，你就得不断轮询去尝试获取锁。</p>
+<p><img src="/.%5C%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9007%E6%9C%9F%E3%80%91Redis%E4%B8%AD%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%EF%BC%9F%5C1.png"></p>
+<p>Redis 官方给出了以上两种基于 Redis 实现分布式锁的方法，详细说明可以查看：<strong><a target="_blank" rel="noopener" href="https://redis.io/topics/distlock">https://redis.io/topics/distlock</a> 。</strong></p>
+<h2 id="Redisson实现"><a href="#Redisson实现" class="headerlink" title="Redisson实现"></a><strong>Redisson实现</strong></h2><p>Redisson是一个在Redis的基础上实现的Java驻内存数据网格（In-Memory Data Grid）。它不仅提供了一系列的分布式的Java常用对象，还实现了可重入锁（Reentrant Lock）、公平锁（Fair Lock、联锁（MultiLock）、 红锁（RedLock）、 读写锁（ReadWriteLock）等，还提供了许多分布式服务。</p>
+<p>Redisson提供了使用Redis的最简单和最便捷的方法。Redisson的宗旨是促进使用者对Redis的关注分离（Separation of Concern），从而让使用者能够将精力更集中地放在处理业务逻辑上。</p>
+<h3 id="Redisson-分布式重入锁用法"><a href="#Redisson-分布式重入锁用法" class="headerlink" title="Redisson 分布式重入锁用法"></a><strong>Redisson 分布式重入锁用法</strong></h3><p>Redisson 支持单点模式、主从模式、哨兵模式、集群模式，这里以单点模式为例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1.构造redisson实现分布式锁必要的Config</span></span><br><span class="line"><span class="type">Config</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Config</span>();</span><br><span class="line">config.useSingleServer().setAddress(<span class="string">&quot;redis://127.0.0.1:5379&quot;</span>).setPassword(<span class="string">&quot;123456&quot;</span>).setDatabase(<span class="number">0</span>);</span><br><span class="line"><span class="comment">// 2.构造RedissonClient</span></span><br><span class="line"><span class="type">RedissonClient</span> <span class="variable">redissonClient</span> <span class="operator">=</span> Redisson.create(config);</span><br><span class="line"><span class="comment">// 3.获取锁对象实例（无法保证是按线程的顺序获取到）</span></span><br><span class="line"><span class="type">RLock</span> <span class="variable">rLock</span> <span class="operator">=</span> redissonClient.getLock(lockKey);</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 4.尝试获取锁</span></span><br><span class="line"><span class="comment">     * waitTimeout 尝试获取锁的最大等待时间，超过这个值，则认为获取锁失败</span></span><br><span class="line"><span class="comment">     * leaseTime   锁的持有时间,超过这个时间锁会自动失效（值应设置为大于业务处理的时间，确保在锁有效期内业务能处理完）</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">res</span> <span class="operator">=</span> rLock.tryLock((<span class="type">long</span>)waitTimeout, (<span class="type">long</span>)leaseTime, TimeUnit.SECONDS);</span><br><span class="line">    <span class="keyword">if</span> (res) &#123;</span><br><span class="line">        <span class="comment">//成功获得锁，在这里处理业务</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;aquire lock fail&quot;</span>);</span><br><span class="line">&#125;<span class="keyword">finally</span>&#123;</span><br><span class="line">    <span class="comment">//无论如何, 最后都要解锁</span></span><br><span class="line">    rLock.unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>加锁流程图</p>
+<p><img src="/.%5C%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9007%E6%9C%9F%E3%80%91Redis%E4%B8%AD%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%EF%BC%9F%5C2.png"></p>
+<p>解锁流程图</p>
+<p><img src="/.%5C%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9007%E6%9C%9F%E3%80%91Redis%E4%B8%AD%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%EF%BC%9F%5C3.png"></p>
+<p>我们可以看到，RedissonLock是可重入的，并且考虑了失败重试，可以设置锁的最大等待时间， 在实现上也做了一些优化，减少了无效的锁申请，提升了资源的利用率。</p>
+<p>需要特别注意的是，RedissonLock 同样没有解决 节点挂掉的时候，存在丢失锁的风险的问题。而现实情况是有一些场景无法容忍的，所以 Redisson 提供了实现了redlock算法的 RedissonRedLock，RedissonRedLock 真正解决了单点失败的问题，代价是需要额外的为 RedissonRedLock 搭建Redis环境。</p>
+<p>所以，如果业务场景可以容忍这种小概率的错误，则推荐使用 RedissonLock， 如果无法容忍，则推荐使用 RedissonRedLock。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a><strong>参考</strong></h2><p><strong><a target="_blank" rel="noopener" href="https://github.com/javazhiyin/advanced-java/">https://github.com/javazhiyin/advanced-java/</a></strong></p>
+<p><strong><a target="_blank" rel="noopener" href="https://crazyfzw.github.io/2019/04/15/distributed-locks-with-redis/">https://crazyfzw.github.io/2019/04/15/distributed-locks-with-redis/</a></strong></p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>wutz</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="https://bj-wutz.github.io/2022/05/07/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9007%E6%9C%9F%E3%80%91Redis%E4%B8%AD%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%EF%BC%9F/">https://bj-wutz.github.io/2022/05/07/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9007%E6%9C%9F%E3%80%91Redis%E4%B8%AD%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%EF%BC%9F/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2022 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>你相信<strong>命运</strong>吗？</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Java/"># Java</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2022/05/08/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9008%E6%9C%9F%E3%80%91%E8%AF%B4%E8%AF%B4Object%E7%B1%BB%E4%B8%8B%E9%9D%A2%E6%9C%89%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95%E5%91%A2%EF%BC%9F/">【Java面试精选】【08期】说说Object类下面有几种方法呢？</a>
+            
+            
+            <a class="next" rel="next" href="/2022/05/06/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9006%E6%9C%9F%E3%80%91%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F%E6%9C%89%E5%87%A0%E7%A7%8D%E5%86%99%E6%B3%95%EF%BC%9F/">【Java面试精选】【06期】单例模式有几种写法？</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© wutz | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>

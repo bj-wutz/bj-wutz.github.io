@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="wutz">
+
+
+
+
+
+<title>【Java面试精选】【09期】说说hashCode() 和 equals() 之间的关系？ | Wutz&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 6.1.0"><link rel="alternate" href="/atom.xml" title="Wutz's Blog" type="application/atom+xml">
+</head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const currentTheme = window.localStorage && window.localStorage.getItem('theme') || '';
+            const isDark = currentTheme === 'dark';
+            const pagebody = document.getElementsByTagName('body')[0]
+            if (isDark) {
+                pagebody.classList.add('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Dark"
+            } else {
+                pagebody.classList.remove('dark-theme');
+                // mobile
+                document.getElementById("mobile-toggle-theme").innerText = "· Light"
+            }
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Wutz&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Wutz&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">&#9776; Menu</div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                    <a class="menu-item" href="/archives">Posts</a>
+                
+                    <a class="menu-item" href="/category">Categories</a>
+                
+                    <a class="menu-item" href="/tag">Tags</a>
+                
+                    <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if(toggleMenu.classList.contains("active")){
+           toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        }else{
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6;    // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function () {
+            tocbot.refresh(obj_merge(tocbot_default_config, { hasInnerContainers: true }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function () {
+        tocbot.init(obj_merge(tocbot_default_config, { collapseDepth: 1 }));
+    });
+
+    function expandToc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, { collapseDepth: expanded ? 1 : DEPTH_MAX }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">【Java面试精选】【09期】说说hashCode() 和 equals() 之间的关系？</h1>
+            
+                <div class="post-meta">
+                    
+                        Author: <a itemprop="author" rel="author" href="/">wutz</a>
+                    
+
+                    
+                        <span class="post-time">
+                        Date: <a href="#">May 9, 2022&nbsp;&nbsp;10:54:34</a>
+                        </span>
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89/">Java面试精选</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <h2 id="面试题"><a href="#面试题" class="headerlink" title="面试题"></a><strong>面试题</strong></h2><p>【强制】关于hashCode和equals的处理，遵循如下规则：</p>
+<ul>
+<li><p>只要重写equals，就必须重写hashCode。</p>
+</li>
+<li><p>因为Set存储的是不重复的对象，依据hashCode和equals进行判断，所以Set存储的对象必须重写这两个方法。</p>
+</li>
+<li><p>如果自定义对象作为Map的key，那么必须重写hashCode和equals。</p>
+</li>
+</ul>
+<p><strong>说明：String重写了hashCode和equals方法，所以我们可以非常愉快的使用String对象作为key来使用。</strong></p>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a><strong>介绍</strong></h2><p>equals() 的作用是用来判断两个对象是否相等。		</p>
+<p>hashCode() 的作用是获取哈希码，也称为散列码；它实际上是返回一个int整数。这个哈希码的作用是确定该对象在哈希表中的索引位置。</p>
+<h2 id="关系"><a href="#关系" class="headerlink" title="关系"></a><strong>关系</strong></h2><p>我们以“类的用途”来将“hashCode() 和 equals()的关系”分两种情况来说明。</p>
+<h3 id="不会创建“类对应的散列表”"><a href="#不会创建“类对应的散列表”" class="headerlink" title="不会创建“类对应的散列表”"></a><strong>不会创建“类对应的散列表”</strong></h3><p>这里所说的“不会创建类对应的散列表”是说：我们不会在HashSet, Hashtable, HashMap等等这些本质是散列表的数据结构中，用到该类。例如，不会创建该类的HashSet集合。</p>
+<p>在这种情况下，该类的“hashCode() 和 equals() ”没有半毛钱关系的！equals() 用来比较该类的两个对象是否相等。而hashCode() 则根本没有任何作用。</p>
+<p>下面，我们通过示例查看类的两个对象相等以及不等时hashCode()的取值。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"><span class="keyword">import</span> java.lang.Comparable;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@desc</span> 比较equals() 返回true 以及 返回false时， hashCode()的值。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NormalHashCodeTest</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// 新建2个相同内容的Person对象，</span></span><br><span class="line">        <span class="comment">// 再用equals比较它们是否相等</span></span><br><span class="line">        <span class="type">Person</span> <span class="variable">p1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;eee&quot;</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;eee&quot;</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p3</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;aaa&quot;</span>, <span class="number">200</span>);</span><br><span class="line">        System.out.printf(<span class="string">&quot;p1.equals(p2) : %s; p1(%d) p2(%d)\n&quot;</span>, p1.equals(p2), p1.hashCode(), p2.hashCode());</span><br><span class="line">        System.out.printf(<span class="string">&quot;p1.equals(p3) : %s; p1(%d) p3(%d)\n&quot;</span>, p1.equals(p3), p1.hashCode(), p3.hashCode());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@desc</span> Person类。</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">        <span class="type">int</span> age;</span><br><span class="line">        String name;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Person</span><span class="params">(String name, <span class="type">int</span> age)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.name = name;</span><br><span class="line">            <span class="built_in">this</span>.age = age;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> name + <span class="string">&quot; - &quot;</span> +age;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/** </span></span><br><span class="line"><span class="comment">         * <span class="doctag">@desc</span> 覆盖equals方法 </span></span><br><span class="line"><span class="comment">         */</span>  </span><br><span class="line">        <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">equals</span><span class="params">(Object obj)</span>&#123;  </span><br><span class="line">            <span class="keyword">if</span>(obj == <span class="literal">null</span>)&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="comment">//如果是同一个对象返回true，反之返回false  </span></span><br><span class="line">            <span class="keyword">if</span>(<span class="built_in">this</span> == obj)&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line">            <span class="comment">//判断是否类型相同  </span></span><br><span class="line">            <span class="keyword">if</span>(<span class="built_in">this</span>.getClass() != obj.getClass())&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line">            <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> (Person)obj;  </span><br><span class="line">            <span class="keyword">return</span> name.equals(person.name) &amp;&amp; age==person.age;  </span><br><span class="line">        &#125; </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">p1.equals(p2) : true; p1(1169863946) p2(1901116749)</span><br><span class="line">p1.equals(p3) : false; p1(1169863946) p3(2131949076)</span><br></pre></td></tr></table></figure>
+
+<p>从结果也可以看出：p1和p2相等的情况下，hashCode()也不一定相等。</p>
+<h3 id="会创建“类对应的散列表”"><a href="#会创建“类对应的散列表”" class="headerlink" title="会创建“类对应的散列表”"></a><strong>会创建“类对应的散列表”</strong></h3><p>这里所说的“会创建类对应的散列表”是说：我们会在HashSet, Hashtable, HashMap等等这些本质是散列表的数据结构中，用到该类。例如，会创建该类的HashSet集合。</p>
+<p>在这种情况下，该类的“hashCode() 和 equals() ”是有关系的：</p>
+<ul>
+<li>如果两个对象相等，那么它们的hashCode()值一定相同。这里的相等是指，通过equals()比较两个对象时返回true。</li>
+<li>如果两个对象hashCode()相等，它们并不一定相等。因为在散列表中，hashCode()相等，即两个键值对的哈希值相等。然而哈希值相等，并不一定能得出键值对相等。补充说一句：“两个不同的键值对，哈希值相等”，这就是哈希冲突。</li>
+</ul>
+<p>此外，在这种情况下。若要判断两个对象是否相等，除了要覆盖equals()之外，也要覆盖hashCode()函数。否则，equals()无效。</p>
+<p>举例，创建Person类的HashSet集合，必须同时覆盖Person类的equals() 和 hashCode()方法。 </p>
+<p>如果单单只是覆盖equals()方法。我们会发现，equals()方法没有达到我们想要的效果。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"><span class="keyword">import</span> java.lang.Comparable;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@desc</span> 比较equals() 返回true 以及 返回false时， hashCode()的值。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConflictHashCodeTest1</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// 新建Person对象，</span></span><br><span class="line">        <span class="type">Person</span> <span class="variable">p1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;eee&quot;</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;eee&quot;</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p3</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;aaa&quot;</span>, <span class="number">200</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 新建HashSet对象 </span></span><br><span class="line">        <span class="type">HashSet</span> <span class="variable">set</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashSet</span>();</span><br><span class="line">        set.add(p1);</span><br><span class="line">        set.add(p2);</span><br><span class="line">        set.add(p3);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 比较p1 和 p2， 并打印它们的hashCode()</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;p1.equals(p2) : %s; p1(%d) p2(%d)\n&quot;</span>, p1.equals(p2), p1.hashCode(), p2.hashCode());</span><br><span class="line">        <span class="comment">// 打印set</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;set:%s\n&quot;</span>, set);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@desc</span> Person类。</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">        <span class="type">int</span> age;</span><br><span class="line">        String name;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Person</span><span class="params">(String name, <span class="type">int</span> age)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.name = name;</span><br><span class="line">            <span class="built_in">this</span>.age = age;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;(&quot;</span>+name + <span class="string">&quot;, &quot;</span> +age+<span class="string">&quot;)&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/** </span></span><br><span class="line"><span class="comment">         * <span class="doctag">@desc</span> 覆盖equals方法 </span></span><br><span class="line"><span class="comment">         */</span>  </span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">equals</span><span class="params">(Object obj)</span>&#123;  </span><br><span class="line">            <span class="keyword">if</span>(obj == <span class="literal">null</span>)&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="comment">//如果是同一个对象返回true，反之返回false  </span></span><br><span class="line">            <span class="keyword">if</span>(<span class="built_in">this</span> == obj)&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="comment">//判断是否类型相同  </span></span><br><span class="line">            <span class="keyword">if</span>(<span class="built_in">this</span>.getClass() != obj.getClass())&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> (Person)obj;  </span><br><span class="line">            <span class="keyword">return</span> name.equals(person.name) &amp;&amp; age==person.age;  </span><br><span class="line">        &#125; </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">p1.equals(p2) : true; p1(1169863946) p2(1690552137)</span><br><span class="line">set:[(eee, 100), (eee, 100), (aaa, 200)]</span><br></pre></td></tr></table></figure>
+
+<p>结果分析：</p>
+<p>我们重写了Person的equals()。但是，很奇怪的发现：HashSet中仍然有重复元素：p1 和 p2。为什么会出现这种情况呢？</p>
+<p><strong>这是因为虽然p1 和 p2的内容相等，但是它们的hashCode()不等；所以，HashSet在添加p1和p2的时候，认为它们不相等。</strong></p>
+<p>那同时覆盖equals() 和 hashCode()方法呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"><span class="keyword">import</span> java.lang.Comparable;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@desc</span> 比较equals() 返回true 以及 返回false时， hashCode()的值。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConflictHashCodeTest2</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// 新建Person对象，</span></span><br><span class="line">        <span class="type">Person</span> <span class="variable">p1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;eee&quot;</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;eee&quot;</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p3</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;aaa&quot;</span>, <span class="number">200</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">p4</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;EEE&quot;</span>, <span class="number">100</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 新建HashSet对象 </span></span><br><span class="line">        <span class="type">HashSet</span> <span class="variable">set</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashSet</span>();</span><br><span class="line">        set.add(p1);</span><br><span class="line">        set.add(p2);</span><br><span class="line">        set.add(p3);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 比较p1 和 p2， 并打印它们的hashCode()</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;p1.equals(p2) : %s; p1(%d) p2(%d)\n&quot;</span>, p1.equals(p2), p1.hashCode(), p2.hashCode());</span><br><span class="line">        <span class="comment">// 比较p1 和 p4， 并打印它们的hashCode()</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;p1.equals(p4) : %s; p1(%d) p4(%d)\n&quot;</span>, p1.equals(p4), p1.hashCode(), p4.hashCode());</span><br><span class="line">        <span class="comment">// 打印set</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;set:%s\n&quot;</span>, set);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@desc</span> Person类。</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">        <span class="type">int</span> age;</span><br><span class="line">        String name;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Person</span><span class="params">(String name, <span class="type">int</span> age)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.name = name;</span><br><span class="line">            <span class="built_in">this</span>.age = age;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> name + <span class="string">&quot; - &quot;</span> +age;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/** </span></span><br><span class="line"><span class="comment">         * <span class="doctag">@desc</span>重写hashCode </span></span><br><span class="line"><span class="comment">         */</span>  </span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">hashCode</span><span class="params">()</span>&#123;  </span><br><span class="line">            <span class="type">int</span> <span class="variable">nameHash</span> <span class="operator">=</span>  name.toUpperCase().hashCode();</span><br><span class="line">            <span class="keyword">return</span> nameHash ^ age;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/** </span></span><br><span class="line"><span class="comment">         * <span class="doctag">@desc</span> 覆盖equals方法 </span></span><br><span class="line"><span class="comment">         */</span>  </span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">equals</span><span class="params">(Object obj)</span>&#123;  </span><br><span class="line">            <span class="keyword">if</span>(obj == <span class="literal">null</span>)&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="comment">//如果是同一个对象返回true，反之返回false  </span></span><br><span class="line">            <span class="keyword">if</span>(<span class="built_in">this</span> == obj)&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="comment">//判断是否类型相同  </span></span><br><span class="line">            <span class="keyword">if</span>(<span class="built_in">this</span>.getClass() != obj.getClass())&#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> (Person)obj;  </span><br><span class="line">            <span class="keyword">return</span> name.equals(person.name) &amp;&amp; age==person.age;  </span><br><span class="line">        &#125; </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">p1.equals(p2) : true; p1(68545) p2(68545)</span><br><span class="line">p1.equals(p4) : false; p1(68545) p4(68545)</span><br><span class="line">set:[aaa - 200, eee - 100]</span><br></pre></td></tr></table></figure>
+
+<p>结果分析：</p>
+<p>这下，equals()生效了，HashSet中没有重复元素。</p>
+<p>比较p1和p2，我们发现：它们的hashCode()相等，通过equals()比较它们也返回true。所以，p1和p2被视为相等。</p>
+<p>比较p1和p4，我们发现：虽然它们的hashCode()相等；但是，通过equals()比较它们返回false。所以，p1和p4被视为不相等。</p>
+<h2 id="原则"><a href="#原则" class="headerlink" title="原则"></a><strong>原则</strong></h2><p>1.<strong>同一个对象（没有发生过修改）无论何时调用hashCode()得到的返回值必须一样。</strong>如果一个key对象在put的时候调用hashCode()决定了存放的位置，而在get的时候调用hashCode()得到了不一样的返回值，这个值映射到了一个和原来不一样的地方，那么肯定就找不到原来那个键值对了。</p>
+<p>2**.hashCode()的返回值相等的对象不一定相等，通过hashCode()和equals()必须能唯一确定一个对象。**不相等的对象的hashCode()的结果可以相等。hashCode()在注意关注碰撞问题的时候，也要关注生成速度问题，完美hash不现实。</p>
+<p>3.<strong>一旦重写了equals()函数（重写equals的时候还要注意要满足自反性、对称性、传递性、一致性），就必须重写hashCode()函数。</strong>而且hashCode()的生成哈希值的依据应该是equals()中用来比较是否相等的字段。</p>
+<p>如果两个由equals()规定相等的对象生成的hashCode不等，对于hashMap来说，他们很可能分别映射到不同位置，没有调用equals()比较是否相等的机会，两个实际上相等的对象可能被插入不同位置，出现错误。其他一些基于哈希方法的集合类可能也会有这个问题</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                
+                    <p class="copyright-item">
+                        <span>Author:</span>
+                        <span>wutz</span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>Permalink:</span>
+                        <span><a href="https://bj-wutz.github.io/2022/05/09/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9009%E6%9C%9F%E3%80%91%E8%AF%B4%E8%AF%B4hashCode-%E5%92%8C-equals-%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%9F/">https://bj-wutz.github.io/2022/05/09/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9009%E6%9C%9F%E3%80%91%E8%AF%B4%E8%AF%B4hashCode-%E5%92%8C-equals-%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%9F/</a></span>
+                    </p>
+                
+                
+                    <p class="copyright-item">
+                        <span>License:</span>
+                        <span>Copyright (c) 2022 <a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/4.0/">CC-BY-NC-4.0</a> LICENSE</span>
+                    </p>
+                
+                
+                     <p class="copyright-item">
+                         <span>Slogan:</span>
+                         <span>你相信<strong>命运</strong>吗？</span>
+                     </p>
+                
+
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Java/"># Java</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2022/05/10/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9010%E6%9C%9F%E3%80%91Redis-%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%97%AE%E7%AD%94/">【Java面试精选】【10期】Redis 面试常见问答</a>
+            
+            
+            <a class="next" rel="next" href="/2022/05/08/%E3%80%90Java%E9%9D%A2%E8%AF%95%E7%B2%BE%E9%80%89%E3%80%91%E3%80%9008%E6%9C%9F%E3%80%91%E8%AF%B4%E8%AF%B4Object%E7%B1%BB%E4%B8%8B%E9%9D%A2%E6%9C%89%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95%E5%91%A2%EF%BC%9F/">【Java面试精选】【08期】说说Object类下面有几种方法呢？</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© wutz | Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com/Siricee/hexo-theme-Chic" target="_blank">Chic</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
